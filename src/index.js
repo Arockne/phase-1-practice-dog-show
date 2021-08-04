@@ -40,11 +40,47 @@ function registerDog(dog) {
 }
 
 function setValues(dog) {
-  const inputs = document.querySelector('#dog-form').querySelectorAll('[type="text"]');
-  console.log(inputs)
+  const form = document.querySelector('#dog-form');
+  const inputs = form.querySelectorAll('[type="text"]');
   inputs.forEach(input => input.value = dog[input.name])
+  const submitButton = form.querySelector('[type="submit"]');
+  submitButton.id = dog.id;
+}
+
+function editCurrentDog() {
+  const form = document.querySelector('form');
+  const inputs = form.querySelectorAll('[type="text"]')
+  const submit = form.querySelector('[type="submit"]')
+  const dogEdit = {};
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    inputs.forEach(input => {
+      dogEdit[input.name] = input.value;
+    });
+    dogEdit.id = Number(submit.id);
+    updateDog(dogEdit);
+    form.reset();
+  })
+}
+
+function updateDog(dog) {
+  fetch(`http://localhost:3000/dogs/${dog.id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(dog)
+  })
+  .then(updateTable);
+}
+
+function updateTable() {
+  const tableRows = document.querySelector('#table-body').querySelectorAll('tr');
+  tableRows.forEach(row => row.remove());
+  renderDogs();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   renderDogs()
+  editCurrentDog();
 })
