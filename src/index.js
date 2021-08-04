@@ -31,11 +31,18 @@ function registerDog(dog) {
 
   const edit = document.createElement('button');
   edit.textContent = 'Edit Dog';
+  edit.addEventListener('click', () => setValues(dog))
   
   const tr = document.createElement('tr');
   tr.append(name, breed, sex, edit)
   
   document.querySelector('#table-body').appendChild(tr);
+}
+
+function setValues(dog) {
+  const inputs = document.querySelector('#dog-form').querySelectorAll('[type="text"]');
+  console.log(inputs)
+  inputs.forEach(input => input.value = dog[input.name])
 }
 
 document.addEventListener('DOMContentLoaded', () => {
