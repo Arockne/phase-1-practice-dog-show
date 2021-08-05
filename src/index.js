@@ -1,69 +1,74 @@
-//on page load render the dogs in the table
-//each dog should be put in a table row
-/*
-<tr><td>Dog *Name*</td> <td>*Dog Breed*</td> <td>*Dog Sex*</td> <td><button>Edit</button></td></tr>
-*/
+// on page load, render  a list of already registered dogs
+//the dogs should be put on a table as a table row
+  /* <tr><td>Dog *Name*</td> <td>*Dog Breed*</td> <td>*Dog Sex*</td> <td><button>Edit</button></td></tr> */
 
 //make a dog editable
-  //clicking onthe edit button
-  //should populate the top form with dogs current information
+  //click on the edit button next to a dog should populate the top form with that dog's current information
   //on a submit
-    //should patch the current dog with updated information
-    //the table should reflect the updated change
+    //a patch request should be made
+      //to update dog information
+
+//once form is submitted, the table should reflect the updated dog information.
+  //once the dog has been updated
+  //rerender the dog information
+
 
 function renderDogs() {
   fetch('http://localhost:3000/dogs')
   .then(resp => resp.json())
-  .then(dogs => dogs.forEach(registerDog))
-  .catch(err => document.querySelector('#table-body').textContent(err.message));
+  .then(registerDogs)
 }
 
-function registerDog(dog) {
-  
+function registerDogs(dogs) {
+  dogs.forEach(createDog);
+}
+
+function createDog(dog) {
   const name = document.createElement('td');
   name.textContent = dog.name;
-  
+  name.className = 'name';
+
   const breed = document.createElement('td');
   breed.textContent = dog.breed;
-  
+  breed.className = 'breed';
+
   const sex = document.createElement('td');
   sex.textContent = dog.sex;
+  sex.className = 'sex';
 
-  const edit = document.createElement('button');
-  edit.textContent = 'Edit Dog';
-  edit.addEventListener('click', () => setValues(dog))
-  
+  const btn = document.createElement('button');
+  btn.textContent = 'Edit Dog';
+  btn.addEventListener('click', () => dogToEdit(dog));
+
   const tr = document.createElement('tr');
-  tr.append(name, breed, sex, edit)
+  tr.id = dog.id;
+  tr.append(name, breed, sex, btn);
   
   document.querySelector('#table-body').appendChild(tr);
 }
 
-function setValues(dog) {
+function dogToEdit(dog) {
   const form = document.querySelector('#dog-form');
   const inputs = form.querySelectorAll('[type="text"]');
-  inputs.forEach(input => input.value = dog[input.name])
-  const submitButton = form.querySelector('[type="submit"]');
-  submitButton.id = dog.id;
+  inputs.forEach(input => input.value = dog[input.name]);
+  form.setAttribute('dogId', dog.id);
 }
 
-function editCurrentDog() {
-  const form = document.querySelector('form');
-  const inputs = form.querySelectorAll('[type="text"]')
-  const submit = form.querySelector('[type="submit"]')
-  const dogEdit = {};
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    inputs.forEach(input => {
-      dogEdit[input.name] = input.value;
-    });
-    dogEdit.id = Number(submit.id);
-    updateDog(dogEdit);
-    form.reset();
-  })
+function updateDog(e) {
+  e.preventDefault();
+  const dog = {};
+  const inputs = this.querySelectorAll('[type="text"]');
+  
+  inputs.forEach(input => dog[input.name] = input.value);
+  dog.id = Number(this.getAttribute('dogId'));
+  
+  updateDogInfo(dog);
+  this.removeAttribute('dogId');
+  this.reset();
 }
 
-function updateDog(dog) {
+function updateDogInfo(dog) {
+  if (!dog.id) return;
   fetch(`http://localhost:3000/dogs/${dog.id}`, {
     method: 'PATCH',
     headers: {
@@ -71,16 +76,20 @@ function updateDog(dog) {
     },
     body: JSON.stringify(dog)
   })
-  .then(updateTable);
+  .then(resp => {
+    if (resp.ok) updateTable();
+  });
 }
 
 function updateTable() {
-  const tableRows = document.querySelector('#table-body').querySelectorAll('tr');
-  tableRows.forEach(row => row.remove());
+  const tableBody = document.querySelector('#table-body');
+  const currentDogs = tableBody.querySelectorAll('tr');
+  currentDogs.forEach(dog => dog.remove());
   renderDogs();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderDogs()
-  editCurrentDog();
+  renderDogs();
+  const form = document.querySelector('#dog-form');
+  form.addEventListener('submit', updateDog)
 })
